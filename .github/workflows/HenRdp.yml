@@ -4,17 +4,23 @@ on:
   workflow_dispatch:
 
 jobs:
-  setup_self_hosted_runner:
-    runs-on: [self-hosted, windows]
+  setup_windows_rdp_runner:
+    runs-on: windows-latest  # Menggunakan GitHub Actions runner untuk memulai setup awal
 
     steps:
+    - name: Download Windows Environment and Initial Setup
+      run: |
+        Write-Output "Starting Windows setup..."
+        # Langkah awal untuk setup environment Windows
+        Write-Output "Windows setup complete."
+
     - name: Install Self-Hosted Runner
       run: |
         mkdir C:\actions-runner
         cd C:\actions-runner
-        Invoke-WebRequest -Uri https://github.com/actions/runner/releases/download/v2.321.0/actions-runner-win-x64-2.321.0.zip -OutFile actions-runner-win-x64-2.321.0.zip
+        Invoke-WebRequest -Uri https://github.com/actions/runner/releases/download/v2.321.0/actions-runner-win-x64-2.321.0.zip -OutFile actions-runner.zip
         Add-Type -AssemblyName System.IO.Compression.FileSystem
-        [System.IO.Compression.ZipFile]::ExtractToDirectory("$PWD/actions-runner-win-x64-2.321.0.zip", "$PWD")
+        [System.IO.Compression.ZipFile]::ExtractToDirectory("$PWD/actions-runner.zip", "$PWD")
 
     - name: Configure Self-Hosted Runner
       run: |
@@ -27,40 +33,37 @@ jobs:
         .\svc.cmd install
         .\svc.cmd start
 
-    - name: Install and Configure Tailscale
+    - name: Setup Tailscale
       run: |
         Invoke-WebRequest -Uri https://pkgs.tailscale.com/stable/tailscale-ipn-setup.exe -OutFile tailscale-ipn-setup.exe
         Start-Process .\tailscale-ipn-setup.exe -ArgumentList "/quiet" -Wait
         tailscale up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }}
-        $tailscaleIp = tailscale ip -4
-        Write-Output "Tailscale IP: $tailscaleIp"
+        Write-Output "Tailscale setup complete."
 
     - name: Enable Remote Desktop (RDP)
       run: |
         Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections" -Value 0
         Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+        Write-Output "RDP enabled."
 
-    - name: Set Wallpaper Automatically
+    - name: Set Wallpaper
       run: |
         $wallpaperUrl = "https://s13.gifyu.com/images/SJ7tu.jpg"
         $wallpaperPath = "$env:USERPROFILE\Desktop\HenCodersWallpaper.jpg"
         Invoke-WebRequest -Uri $wallpaperUrl -OutFile $wallpaperPath
         reg add "HKCU\Control Panel\Desktop" /v Wallpaper /t REG_SZ /d $wallpaperPath /f
         reg add "HKCU\Control Panel\Desktop" /v WallpaperStyle /t REG_SZ /d 10 /f
-        reg add "HKCU\Control Panel\Desktop" /v TileWallpaper /t REG_SZ /d 0 /f
         RUNDLL32.EXE user32.dll,UpdatePerUserSystemParameters
+        Write-Output "Wallpaper applied."
 
-    - name: Set RDP Audio
-      run: |
-        reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" /v fEnableSound /t REG_DWORD /d 1 /f
-
-    - name: Add Desktop Branding
+    - name: Add Branding to Desktop
       run: |
         $brandingText = "Copyright © HenCoders 2024\nAll rights reserved."
         $desktopPath = "$env:USERPROFILE\Desktop"
         Set-Content -Path "$desktopPath\HenCoders_Info.txt" -Value $brandingText
+        Write-Output "Branding added to desktop."
 
-    - name: Display RDP Login Info
+    - name: Display RDP Login Details
       run: |
         $tailscaleIp = tailscale ip -4
         Write-Output "================================"
