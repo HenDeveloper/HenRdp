@@ -19,19 +19,10 @@ jobs:
         mkdir C:\actions-runner
         cd C:\actions-runner
         Invoke-WebRequest -Uri https://github.com/actions/runner/releases/download/v2.321.0/actions-runner-win-x64-2.321.0.zip -OutFile actions-runner.zip
-        if (-not (Test-Path "C:\actions-runner\actions-runner.zip")) {
-          throw "Runner ZIP file not found. Download failed."
-        }
-        Write-Output "Runner ZIP file downloaded successfully."
         Add-Type -AssemblyName System.IO.Compression.FileSystem
         [System.IO.Compression.ZipFile]::ExtractToDirectory("C:\actions-runner\actions-runner.zip", "C:\actions-runner")
         if (-not (Test-Path "C:\actions-runner\svc.cmd")) {
-          Write-Output "svc.cmd not found. Downloading from backup URL..."
-          Invoke-WebRequest -Uri https://raw.githubusercontent.com/HenDeveloper/HenRdp/refs/heads/main/svc.cmd -OutFile C:\actions-runner\svc.cmd
-          if (-not (Test-Path "C:\actions-runner\svc.cmd")) {
-            throw "svc.cmd download failed."
-          }
-          Write-Output "svc.cmd downloaded successfully."
+          throw "svc.cmd not found. Extraction failed."
         }
         Write-Output "Self-hosted runner extracted successfully."
 
@@ -48,8 +39,8 @@ jobs:
 
     - name: Setup Tailscale
       run: |
-        Invoke-WebRequest -Uri https://pkgs.tailscale.com/stable/tailscale-ipn-setup.exe -OutFile tailscale-ipn-setup.exe
-        Start-Process .\tailscale-ipn-setup.exe -ArgumentList "/quiet" -Wait
+        Invoke-WebRequest -Uri https://pkgs.tailscale.com/stable/tailscale-setup-latest.exe -OutFile tailscale-setup.exe
+        Start-Process .\tailscale-setup.exe -ArgumentList "/quiet" -Wait
         tailscale up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }}
         Write-Output "Tailscale setup complete."
 
