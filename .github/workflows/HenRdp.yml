@@ -1,0 +1,71 @@
+name: RDP HenCoders
+
+on:
+  workflow_dispatch:
+
+jobs:
+  setup_self_hosted_runner:
+    runs-on: [self-hosted, windows]
+
+    steps:
+    - name: Install Self-Hosted Runner
+      run: |
+        mkdir C:\actions-runner
+        cd C:\actions-runner
+        Invoke-WebRequest -Uri https://github.com/actions/runner/releases/download/v2.321.0/actions-runner-win-x64-2.321.0.zip -OutFile actions-runner-win-x64-2.321.0.zip
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
+        [System.IO.Compression.ZipFile]::ExtractToDirectory("$PWD/actions-runner-win-x64-2.321.0.zip", "$PWD")
+
+    - name: Configure Self-Hosted Runner
+      run: |
+        cd C:\actions-runner
+        .\config.cmd --url https://github.com/HenDeveloper/HenRdp --token ${{ secrets.TOKEN }}
+
+    - name: Install and Start Self-Hosted Runner Service
+      run: |
+        cd C:\actions-runner
+        .\svc.cmd install
+        .\svc.cmd start
+
+    - name: Install and Configure Tailscale
+      run: |
+        Invoke-WebRequest -Uri https://pkgs.tailscale.com/stable/tailscale-ipn-setup.exe -OutFile tailscale-ipn-setup.exe
+        Start-Process .\tailscale-ipn-setup.exe -ArgumentList "/quiet" -Wait
+        tailscale up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }}
+        $tailscaleIp = tailscale ip -4
+        Write-Output "Tailscale IP: $tailscaleIp"
+
+    - name: Enable Remote Desktop (RDP)
+      run: |
+        Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections" -Value 0
+        Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+
+    - name: Set Wallpaper Automatically
+      run: |
+        $wallpaperUrl = "https://s13.gifyu.com/images/SJ7tu.jpg"
+        $wallpaperPath = "$env:USERPROFILE\Desktop\HenCodersWallpaper.jpg"
+        Invoke-WebRequest -Uri $wallpaperUrl -OutFile $wallpaperPath
+        reg add "HKCU\Control Panel\Desktop" /v Wallpaper /t REG_SZ /d $wallpaperPath /f
+        reg add "HKCU\Control Panel\Desktop" /v WallpaperStyle /t REG_SZ /d 10 /f
+        reg add "HKCU\Control Panel\Desktop" /v TileWallpaper /t REG_SZ /d 0 /f
+        RUNDLL32.EXE user32.dll,UpdatePerUserSystemParameters
+
+    - name: Set RDP Audio
+      run: |
+        reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" /v fEnableSound /t REG_DWORD /d 1 /f
+
+    - name: Add Desktop Branding
+      run: |
+        $brandingText = "Copyright © HenCoders 2024\nAll rights reserved."
+        $desktopPath = "$env:USERPROFILE\Desktop"
+        Set-Content -Path "$desktopPath\HenCoders_Info.txt" -Value $brandingText
+
+    - name: Display RDP Login Info
+      run: |
+        $tailscaleIp = tailscale ip -4
+        Write-Output "================================"
+        Write-Output "RDP Login Details:"
+        Write-Output "IP RDP: $tailscaleIp"
+        Write-Output "Username: administrator"
+        Write-Output "Password: HenCoders2024"
+        Write-Output "================================"
