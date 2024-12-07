@@ -8,19 +8,21 @@ jobs:
     runs-on: windows-latest  # Menggunakan GitHub Actions runner untuk memulai setup awal
 
     steps:
-    - name: Initial Setup for Windows Environment
-      run: |
-        Write-Output "Starting Windows environment setup..."
-        Write-Output "Initial setup completed."
-
-    - name: Install Self-Hosted Runner
+    - name: Download and Extract Self-Hosted Runner
       run: |
         mkdir C:\actions-runner
         cd C:\actions-runner
         Invoke-WebRequest -Uri https://github.com/actions/runner/releases/download/v2.321.0/actions-runner-win-x64-2.321.0.zip -OutFile actions-runner.zip
         Add-Type -AssemblyName System.IO.Compression.FileSystem
-        [System.IO.Compression.ZipFile]::ExtractToDirectory("$PWD/actions-runner.zip", "$PWD")
+        [System.IO.Compression.ZipFile]::ExtractToDirectory("C:\actions-runner\actions-runner.zip", "C:\actions-runner")
         Write-Output "Self-hosted runner downloaded and extracted."
+
+    - name: Verify Extracted Files
+      run: |
+        if (-not (Test-Path "C:\actions-runner\svc.cmd")) {
+          throw "svc.cmd not found. Extraction failed."
+        }
+        Write-Output "svc.cmd verified."
 
     - name: Configure Self-Hosted Runner
       run: |
