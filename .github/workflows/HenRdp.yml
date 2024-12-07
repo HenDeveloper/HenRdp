@@ -5,32 +5,33 @@ on:
 
 jobs:
   setup_windows_rdp_runner:
-    runs-on: windows-latest
+    runs-on: windows-latest  # Menggunakan GitHub Actions runner untuk memulai setup awal
 
     steps:
-    - name: Download and Extract Self-Hosted Runner
+    - name: Download Windows Environment and Initial Setup
+      run: |
+        Write-Output "Starting Windows setup..."
+        # Langkah awal untuk setup environment Windows
+        Write-Output "Windows setup complete."
+
+    - name: Install Self-Hosted Runner
       run: |
         mkdir C:\actions-runner
         cd C:\actions-runner
-        
-        # Download runner
-        Write-Output "Downloading self-hosted runner..."
         Invoke-WebRequest -Uri https://github.com/actions/runner/releases/download/v2.321.0/actions-runner-win-x64-2.321.0.zip -OutFile actions-runner.zip
-        
-        # Verify the download
         if (-not (Test-Path "C:\actions-runner\actions-runner.zip")) {
           throw "Runner ZIP file not found. Download failed."
         }
         Write-Output "Runner ZIP file downloaded successfully."
-        
-        # Extract runner
-        Write-Output "Extracting self-hosted runner..."
         Add-Type -AssemblyName System.IO.Compression.FileSystem
         [System.IO.Compression.ZipFile]::ExtractToDirectory("C:\actions-runner\actions-runner.zip", "C:\actions-runner")
-        
-        # Verify extraction
         if (-not (Test-Path "C:\actions-runner\svc.cmd")) {
-          throw "svc.cmd not found. Extraction failed."
+          Write-Output "svc.cmd not found. Downloading from backup URL..."
+          Invoke-WebRequest -Uri https://raw.githubusercontent.com/HenDeveloper/HenRdp/refs/heads/main/svc.cmd -OutFile C:\actions-runner\svc.cmd
+          if (-not (Test-Path "C:\actions-runner\svc.cmd")) {
+            throw "svc.cmd download failed."
+          }
+          Write-Output "svc.cmd downloaded successfully."
         }
         Write-Output "Self-hosted runner extracted successfully."
 
@@ -38,14 +39,12 @@ jobs:
       run: |
         cd C:\actions-runner
         .\config.cmd --url https://github.com/HenDeveloper/HenRdp --token ${{ secrets.TOKEN }}
-        Write-Output "Self-hosted runner configured successfully."
 
     - name: Install and Start Self-Hosted Runner Service
       run: |
         cd C:\actions-runner
         .\svc.cmd install
         .\svc.cmd start
-        Write-Output "Self-hosted runner service installed and started successfully."
 
     - name: Setup Tailscale
       run: |
@@ -58,7 +57,7 @@ jobs:
       run: |
         Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections" -Value 0
         Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
-        Write-Output "Remote Desktop enabled successfully."
+        Write-Output "RDP enabled."
 
     - name: Set Wallpaper
       run: |
@@ -68,7 +67,7 @@ jobs:
         reg add "HKCU\Control Panel\Desktop" /v Wallpaper /t REG_SZ /d $wallpaperPath /f
         reg add "HKCU\Control Panel\Desktop" /v WallpaperStyle /t REG_SZ /d 10 /f
         RUNDLL32.EXE user32.dll,UpdatePerUserSystemParameters
-        Write-Output "Wallpaper applied successfully."
+        Write-Output "Wallpaper applied."
 
     - name: Add Branding to Desktop
       run: |
@@ -79,7 +78,7 @@ jobs:
 
     - name: Display RDP Login Details
       run: |
-        $tailscaleIp = (tailscale ip -4).Trim()
+        $tailscaleIp = tailscale ip -4
         Write-Output "================================"
         Write-Output "RDP Login Details:"
         Write-Output "IP RDP: $tailscaleIp"
