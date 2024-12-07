@@ -5,24 +5,34 @@ on:
 
 jobs:
   setup_windows_rdp_runner:
-    runs-on: windows-latest  # Menggunakan GitHub Actions runner untuk memulai setup awal
+    runs-on: windows-latest
 
     steps:
     - name: Download and Extract Self-Hosted Runner
       run: |
         mkdir C:\actions-runner
         cd C:\actions-runner
+        
+        # Download runner
+        Write-Output "Downloading self-hosted runner..."
         Invoke-WebRequest -Uri https://github.com/actions/runner/releases/download/v2.321.0/actions-runner-win-x64-2.321.0.zip -OutFile actions-runner.zip
+        
+        # Verify the download
+        if (-not (Test-Path "C:\actions-runner\actions-runner.zip")) {
+          throw "Runner ZIP file not found. Download failed."
+        }
+        Write-Output "Runner ZIP file downloaded successfully."
+        
+        # Extract runner
+        Write-Output "Extracting self-hosted runner..."
         Add-Type -AssemblyName System.IO.Compression.FileSystem
         [System.IO.Compression.ZipFile]::ExtractToDirectory("C:\actions-runner\actions-runner.zip", "C:\actions-runner")
-        Write-Output "Self-hosted runner downloaded and extracted."
-
-    - name: Verify Extracted Files
-      run: |
+        
+        # Verify extraction
         if (-not (Test-Path "C:\actions-runner\svc.cmd")) {
           throw "svc.cmd not found. Extraction failed."
         }
-        Write-Output "svc.cmd verified."
+        Write-Output "Self-hosted runner extracted successfully."
 
     - name: Configure Self-Hosted Runner
       run: |
@@ -35,7 +45,7 @@ jobs:
         cd C:\actions-runner
         .\svc.cmd install
         .\svc.cmd start
-        Write-Output "Self-hosted runner service installed and started."
+        Write-Output "Self-hosted runner service installed and started successfully."
 
     - name: Setup Tailscale
       run: |
