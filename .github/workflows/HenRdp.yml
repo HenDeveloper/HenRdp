@@ -8,11 +8,10 @@ jobs:
     runs-on: windows-latest  # Menggunakan GitHub Actions runner untuk memulai setup awal
 
     steps:
-    - name: Download Windows Environment and Initial Setup
+    - name: Initial Setup for Windows Environment
       run: |
-        Write-Output "Starting Windows setup..."
-        # Langkah awal untuk setup environment Windows
-        Write-Output "Windows setup complete."
+        Write-Output "Starting Windows environment setup..."
+        Write-Output "Initial setup completed."
 
     - name: Install Self-Hosted Runner
       run: |
@@ -21,17 +20,20 @@ jobs:
         Invoke-WebRequest -Uri https://github.com/actions/runner/releases/download/v2.321.0/actions-runner-win-x64-2.321.0.zip -OutFile actions-runner.zip
         Add-Type -AssemblyName System.IO.Compression.FileSystem
         [System.IO.Compression.ZipFile]::ExtractToDirectory("$PWD/actions-runner.zip", "$PWD")
+        Write-Output "Self-hosted runner downloaded and extracted."
 
     - name: Configure Self-Hosted Runner
       run: |
         cd C:\actions-runner
         .\config.cmd --url https://github.com/HenDeveloper/HenRdp --token ${{ secrets.TOKEN }}
+        Write-Output "Self-hosted runner configured successfully."
 
     - name: Install and Start Self-Hosted Runner Service
       run: |
         cd C:\actions-runner
         .\svc.cmd install
         .\svc.cmd start
+        Write-Output "Self-hosted runner service installed and started."
 
     - name: Setup Tailscale
       run: |
@@ -44,7 +46,7 @@ jobs:
       run: |
         Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections" -Value 0
         Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
-        Write-Output "RDP enabled."
+        Write-Output "Remote Desktop enabled successfully."
 
     - name: Set Wallpaper
       run: |
@@ -54,7 +56,7 @@ jobs:
         reg add "HKCU\Control Panel\Desktop" /v Wallpaper /t REG_SZ /d $wallpaperPath /f
         reg add "HKCU\Control Panel\Desktop" /v WallpaperStyle /t REG_SZ /d 10 /f
         RUNDLL32.EXE user32.dll,UpdatePerUserSystemParameters
-        Write-Output "Wallpaper applied."
+        Write-Output "Wallpaper applied successfully."
 
     - name: Add Branding to Desktop
       run: |
@@ -65,7 +67,7 @@ jobs:
 
     - name: Display RDP Login Details
       run: |
-        $tailscaleIp = tailscale ip -4
+        $tailscaleIp = (tailscale ip -4).Trim()
         Write-Output "================================"
         Write-Output "RDP Login Details:"
         Write-Output "IP RDP: $tailscaleIp"
