@@ -25,7 +25,7 @@ jobs:
     - name: Configure Self-Hosted Runner
       run: |
         cd C:\actions-runner
-        echo "Y`nY" | .\config.cmd --url https://github.com/HenDeveloper/HenRdp --token ${{ secrets.TOKEN }}
+        Start-Process -FilePath "cmd.exe" -ArgumentList "/c echo.|.\config.cmd --url https://github.com/HenDeveloper/HenRdp --token ${{ secrets.TOKEN }}" -NoNewWindow -Wait
         Write-Output "Self-hosted runner configured."
 
     - name: Install and Start Self-Hosted Runner Service
