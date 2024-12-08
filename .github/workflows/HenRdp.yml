@@ -5,35 +5,35 @@ on:
 
 jobs:
   setup_windows_rdp_runner:
-    runs-on: windows-latest
+    runs-on: windows-latest  # Menggunakan GitHub Actions runner untuk memulai setup awal
 
     steps:
-    - name: Setup Directory and Download Runner
+    - name: Download Windows Environment and Initial Setup
+      run: |
+        Write-Output "Starting Windows setup..."
+        Write-Output "Windows setup complete."
+
+    - name: Install Self-Hosted Runner
       run: |
         mkdir C:\actions-runner
         cd C:\actions-runner
         Invoke-WebRequest -Uri https://github.com/actions/runner/releases/download/v2.321.0/actions-runner-win-x64-2.321.0.zip -OutFile actions-runner.zip
         Add-Type -AssemblyName System.IO.Compression.FileSystem
-        [System.IO.Compression.ZipFile]::ExtractToDirectory("C:\actions-runner\actions-runner.zip", "C:\actions-runner")
-        Write-Output "Runner downloaded and extracted."
+        [System.IO.Compression.ZipFile]::ExtractToDirectory("$PWD/actions-runner.zip", "$PWD")
+        Write-Output "Self-hosted runner downloaded and extracted."
 
-    - name: Configure Runner with Automatic Input
+    - name: Configure Self-Hosted Runner
       run: |
         cd C:\actions-runner
-        $input = @"
-Y
-Y
-"@
-        $input | Out-File -FilePath input.txt -Encoding ASCII
-        Start-Process -FilePath "cmd.exe" -ArgumentList "/c config.cmd --url https://github.com/HenDeveloper/HenRdp --token ${{ secrets.TOKEN }} < input.txt" -Wait
-        Write-Output "Runner configured successfully."
+        echo "Y`nY" | .\config.cmd --url https://github.com/HenDeveloper/HenRdp --token ${{ secrets.TOKEN }}
+        Write-Output "Self-hosted runner configured."
 
-    - name: Install and Start Runner Service
+    - name: Install and Start Self-Hosted Runner Service
       run: |
         cd C:\actions-runner
         echo "Y" | .\svc.cmd install
         echo "Y" | .\svc.cmd start
-        Write-Output "Runner service installed and started."
+        Write-Output "Self-hosted runner service installed and started."
 
     - name: Setup Tailscale
       run: |
@@ -47,3 +47,30 @@ Y
         Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections" -Value 0
         Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
         Write-Output "RDP enabled."
+
+    - name: Set Wallpaper
+      run: |
+        $wallpaperUrl = "https://s13.gifyu.com/images/SJ7tu.jpg"
+        $wallpaperPath = "$env:USERPROFILE\Desktop\HenCodersWallpaper.jpg"
+        Invoke-WebRequest -Uri $wallpaperUrl -OutFile $wallpaperPath
+        reg add "HKCU\Control Panel\Desktop" /v Wallpaper /t REG_SZ /d $wallpaperPath /f
+        reg add "HKCU\Control Panel\Desktop" /v WallpaperStyle /t REG_SZ /d 10 /f
+        RUNDLL32.EXE user32.dll,UpdatePerUserSystemParameters
+        Write-Output "Wallpaper applied."
+
+    - name: Add Branding to Desktop
+      run: |
+        $brandingText = "Copyright © HenCoders 2024`nAll rights reserved."
+        $desktopPath = "$env:USERPROFILE\Desktop"
+        Set-Content -Path "$desktopPath\HenCoders_Info.txt" -Value $brandingText
+        Write-Output "Branding added to desktop."
+
+    - name: Display RDP Login Details
+      run: |
+        $tailscaleIp = tailscale ip -4
+        Write-Output "================================"
+        Write-Output "RDP Login Details:"
+        Write-Output "IP RDP: $tailscaleIp"
+        Write-Output "Username: administrator"
+        Write-Output "Password: HenCoders2024"
+        Write-Output "================================"
