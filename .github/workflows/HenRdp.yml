@@ -5,7 +5,7 @@ on:
 
 jobs:
   setup_windows_rdp_runner:
-    runs-on: [self-hosted, windows]  # Gunakan label yang sesuai dengan self-hosted runner Anda
+    runs-on: [windows-lastest, self-hosted]
 
     steps:
     - name: Download Windows Environment and Initial Setup
