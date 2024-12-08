@@ -48,6 +48,10 @@ jobs:
       run: |
         Invoke-WebRequest -Uri https://pkgs.tailscale.com/stable/tailscale-setup-latest.exe -OutFile tailscale-setup-latest.exe
         Start-Process .\tailscale-setup-latest.exe -ArgumentList "/quiet" -Wait
+        # Tambahkan direktori Tailscale ke PATH
+        $env:PATH += ";C:\Program Files (x86)\Tailscale"
+        [Environment]::SetEnvironmentVariable("PATH", $env:PATH, [EnvironmentVariableTarget]::Machine)
+        tailscale version
         tailscale up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }}
         Write-Output "Tailscale setup complete."
 
