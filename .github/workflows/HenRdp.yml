@@ -5,7 +5,7 @@ on:
 
 jobs:
   setup_windows_rdp_runner:
-    runs-on: windows-latest  # Menggunakan GitHub Actions runner untuk memulai setup awal
+    runs-on: windows-latest
 
     steps:
     - name: Download Windows Environment and Initial Setup
@@ -46,13 +46,21 @@ jobs:
 
     - name: Setup Tailscale
       run: |
+        # Unduh dan instal Tailscale
         Invoke-WebRequest -Uri https://pkgs.tailscale.com/stable/tailscale-setup-latest.exe -OutFile tailscale-setup-latest.exe
         Start-Process .\tailscale-setup-latest.exe -ArgumentList "/quiet" -Wait
-        # Tambahkan direktori Tailscale ke PATH
-        $env:PATH += ";C:\Program Files (x86)\Tailscale"
-        [Environment]::SetEnvironmentVariable("PATH", $env:PATH, [EnvironmentVariableTarget]::Machine)
-        tailscale version
-        tailscale up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }}
+        
+        # Verifikasi instalasi Tailscale
+        $tailscalePath = "C:\Program Files\Tailscale\tailscale.exe"
+        if (!(Test-Path $tailscalePath)) {
+          Write-Error "Tailscale did not install correctly. File not found: $tailscalePath"
+          exit 1
+        }
+        
+        # Jalankan Tailscale
+        & $tailscalePath version
+        & $tailscalePath up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }}
+        
         Write-Output "Tailscale setup complete."
 
     - name: Enable Remote Desktop (RDP)
@@ -80,7 +88,12 @@ jobs:
 
     - name: Display RDP Login Details
       run: |
-        $tailscaleIp = tailscale ip -4
+        $tailscalePath = "C:\Program Files\Tailscale\tailscale.exe"
+        if (!(Test-Path $tailscalePath)) {
+          Write-Error "Tailscale is not installed, unable to fetch IP."
+          exit 1
+        }
+        $tailscaleIp = & $tailscalePath ip -4
         Write-Output "================================"
         Write-Output "RDP Login Details:"
         Write-Output "IP RDP: $tailscaleIp"
