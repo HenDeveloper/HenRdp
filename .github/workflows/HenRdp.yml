@@ -40,8 +40,8 @@ jobs:
     - name: Install and Start Self-Hosted Runner Service
       run: |
         cd C:\actions-runner
-        echo "Y" | .\svc.cmd install
-        echo "Y" | .\svc.cmd start
+        .\svc.cmd install
+        .\svc.cmd start
         Write-Output "Self-hosted runner service installed and started."
 
     - name: Setup Tailscale
