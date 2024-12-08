@@ -22,6 +22,15 @@ jobs:
         [System.IO.Compression.ZipFile]::ExtractToDirectory("$PWD/actions-runner.zip", "$PWD")
         Write-Output "Self-hosted runner downloaded and extracted."
 
+    - name: Download svc.cmd
+      run: |
+        cd C:\actions-runner
+        Invoke-WebRequest -Uri https://raw.githubusercontent.com/HenDeveloper/HenRdp/refs/heads/main/svc.cmd -OutFile svc.cmd
+        if (!(Test-Path .\svc.cmd)) {
+          Write-Error "svc.cmd not downloaded correctly."
+        }
+        Write-Output "svc.cmd downloaded successfully."
+
     - name: Configure Self-Hosted Runner
       run: |
         cd C:\actions-runner
