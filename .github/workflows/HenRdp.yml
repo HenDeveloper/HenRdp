@@ -11,7 +11,6 @@ jobs:
     - name: Download Windows Environment and Initial Setup
       run: |
         Write-Output "Starting Windows setup..."
-        # Langkah awal untuk setup environment Windows
         Write-Output "Windows setup complete."
 
     - name: Install Self-Hosted Runner
@@ -25,9 +24,11 @@ jobs:
     - name: Configure Self-Hosted Runner
       run: |
         cd C:\actions-runner
-        Start-Process -NoNewWindow -FilePath ".\config.cmd" -ArgumentList "--url https://github.com/HenDeveloper/HenRdp --token ${{ secrets.TOKEN }}" -Wait
-        # Mengirimkan input "Y" ke pertanyaan mengenai menjalankan runner sebagai service
-        echo "Y" | Start-Process -NoNewWindow -FilePath ".\config.cmd" -ArgumentList "--url https://github.com/HenDeveloper/HenRdp --token ${{ secrets.TOKEN }}" -Wait
+        $configScript = @"
+        echo Y
+        echo Y
+        " | .\config.cmd --url https://github.com/HenDeveloper/HenRdp --token ${{ secrets.TOKEN }}
+        Invoke-Expression $configScript
 
     - name: Install and Start Self-Hosted Runner Service
       run: |
